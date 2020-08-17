@@ -325,6 +325,7 @@ viewVictory = (model) ->
       <p class="hooray">Congratulations, you won the game!</p>
       <p>You had #{formatTime model.time} to spare. Well done!</p>
       <p>Thanks for playing. :)</p>
+      <p class="whisper">Want to see the <a href="https://github.com/spaceaardvark/adventure-on-lochwood-drive/blob/master/src/game.coffee">source code</a>?</p>
       """
 
 

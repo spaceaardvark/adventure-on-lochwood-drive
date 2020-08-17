@@ -56,6 +56,11 @@ strong {
   color: lime;
 }
 
+.whisper {
+  color: lightgray;
+  font-size: 80%;
+}
+
 .time {
   color: gray;
   font-style: italic;
