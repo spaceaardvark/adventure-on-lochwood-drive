@@ -13,6 +13,5 @@
   "devDependencies": {
     "coffeescript": "^2.5.1"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }
