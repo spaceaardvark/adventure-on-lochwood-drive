@@ -1,0 +1,18 @@
+{
+  "name": "adventure-on-lochwood-drive",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/main.js",
+  "scripts": {
+    "build": "coffee --compile --bare --output lib/ src/",
+    "watch": "coffee --watch --compile --bare --output lib/ src/",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "spaceaardvark",
+  "license": "MIT",
+  "devDependencies": {
+    "coffeescript": "^2.5.1"
+  },
+  "dependencies": {
+  }
+}
