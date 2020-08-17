@@ -2,10 +2,12 @@
   "name": "adventure-on-lochwood-drive",
   "version": "1.0.0",
   "description": "",
-  "main": "lib/main.js",
+  "main": "dist/game.js",
   "scripts": {
-    "build": "coffee --compile --bare --output lib/ src/",
-    "watch": "coffee --watch --compile --bare --output lib/ src/",
+    "build": "coffee --compile --bare --output dist/ src/",
+    "watch": "coffee --watch --compile --bare --output dist/ src/",
+    "serve": "http-server dist",
+    "publish": "cd dist && surge && cd ..",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "spaceaardvark",

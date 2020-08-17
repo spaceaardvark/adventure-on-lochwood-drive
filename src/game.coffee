@@ -31,12 +31,14 @@ Room =
   INTRO: "intro"
   KITCHEN: "kitchen"
   LIVING_ROOM: "living"
+  VICTORY: "victory"
 
 
 Inventory =
   PHONE: "phone"
   POWER_CORD: "powercord"
   CONTROLLER: "controller"
+  TAPE_MEASURE: "tapemeasure"
 
 
 GameConsole =
@@ -70,10 +72,16 @@ EnergyDrink =
 
 Brother =
   PLAYING_WITH_LEGOS: "legos"
-  PLAYING_WITH_CONTROLLER: "controller"
+  PLAYING_WITH_TAPE_MEASURE: "tapemeasure"
   PLAYING_WITH_GAME: "game"
-  TAKING_CONTROLLER: "taking"
+  TAKING_TAPE_MEASURE: "taking"
   PLAYING_WITH_PHONE: "phone"
+
+
+Mom =
+  ASKING_FOR_TAPE_MEASURE: "asking"
+  MEASURING: "measuring"
+  COMPLIMENTED: "complimented"
  
 
 # MODEL
@@ -89,7 +97,8 @@ initialModel =
   dadState: Dad.GRUMPY
   deliveryState: Delivery.NOT_HERE
   energyDrinkState: EnergyDrink.FULL
-  brotherState: Brother.PLAYING_WITH_CONTROLLER
+  brotherState: Brother.PLAYING_WITH_LEGOS
+  momState: Mom.ASKING_FOR_TAPE_MEASURE
 
 
 # UPDATE
@@ -97,22 +106,26 @@ initialModel =
 
 MSG_AVOID_DAD = "AVOID_DAD"
 MSG_CLEAN_UP_POOP = "CLEAN_UP_POOP"
+MSG_COMPLIMENT_MOM = "COMPLIMENT_MOM"
 MSG_DRINK_ENERGY = "DRINK_ENERGY"
 MSG_GIVE_BROTHER_PHONE = "GIVE_BROTHER_PHONE"
+MSG_GIVE_MOM_TAPE_MEASURE = "GIVE_MOM_TAPE_MEASURE"
 MSG_GO_BEDROOM = "GO_BEDROOM"
 MSG_GO_BROTHERS_ROOM = "GO_BROTHERS_ROOM"
 MSG_GO_FOYER = "GO_FOYER"
 MSG_GO_GARAGE = "GO_GARAGE"
 MSG_GO_KITCHEN = "GO_KITCHEN"
 MSG_GO_LIVING_ROOM = "GO_LIVING_ROOM"
+MSG_GO_ONLINE = "GO_ONLINE"
 MSG_HELP_DAD = "HELP_DAD"
 MSG_HELP_MAD_DAD = "HELP_MAD_DAD"
 MSG_INIT = "INIT"
 MSG_LET_SYDNEY_OUT = "LET_SYDNEY_OUT"
 MSG_OPEN_FRONT_DOOR = "OPEN_FRONT_DOOR"
 MSG_PLAY_GAME_WITH_BROTHER = "PLAY_GAME_WITH_BROTHER"
-MSG_PLUG_IN_PLAYSTATION = "PLUG_IN_PLAYSTATION"
-MSG_TAKE_CONTROLLER_FROM_BROTHER = "TAKE_CONTROLLER_FROM_BROTHER"
+MSG_PLUG_IN_CONTROLLER = "PLUG_IN_CONTROLLER"
+MSG_PLUG_IN_GAME_CONSOLE = "PLUG_IN_GAME_CONSOLE"
+MSG_TAKE_TAPE_MEASURE_FROM_BROTHER = "TAKE_TAPE_MEASURE_FROM_BROTHER"
 MSG_TICK = "TICK"
 
 
@@ -128,6 +141,11 @@ update = (model, msg) ->
       time: model.time - DOG_PENALTY_TIME
       penaltyTime: model.penaltyTime + DOG_PENALTY_TIME
     }
+    when MSG_COMPLIMENT_MOM then {
+      ...model
+      momState: Mom.COMPLIMENTED
+      inventory: R.prepend Inventory.CONTROLLER, model.inventory
+    }
     when MSG_DRINK_ENERGY then {
       ...model
       time: model.time + TICK_TIME
@@ -136,14 +154,19 @@ update = (model, msg) ->
     when MSG_GIVE_BROTHER_PHONE then {
       ...model
       brotherState: Brother.PLAYING_WITH_PHONE
-      inventory: (R.pipe (R.without Inventory.PHONE), (R.prepend Inventory.CONTROLLER)) model.inventory
+      inventory: (R.pipe (R.without Inventory.PHONE), (R.prepend Inventory.TAPE_MEASURE)) model.inventory
+    }
+    when MSG_GIVE_MOM_TAPE_MEASURE then {
+      ...model
+      momState: Mom.MEASURING
+      inventory: R.without Inventory.TAPE_MEASURE, model.inventory
     }
     when MSG_GO_BEDROOM then { ...model, currentRoom: Room.BEDROOM }
     when MSG_GO_BROTHERS_ROOM then {
       ...model
       currentRoom: Room.BROTHERS_ROOM
       brotherState: switch model.brotherState
-        when Brother.PLAYING_WITH_GAME, Brother.TAKING_CONTROLLER then Brother.PLAYING_WITH_CONTROLLER
+        when Brother.PLAYING_WITH_GAME, Brother.TAKING_TAPE_MEASURE then Brother.PLAYING_WITH_TAPE_MEASURE
         else model.brotherState
     }
     when MSG_GO_FOYER then { ...model, currentRoom: Room.FOYER }
@@ -154,6 +177,10 @@ update = (model, msg) ->
       energyDrinkState: EnergyDrink.FULL
      }
     when MSG_GO_LIVING_ROOM then { ...model, currentRoom: Room.LIVING_ROOM }
+    when MSG_GO_ONLINE then {
+      ...model
+      currentRoom: Room.VICTORY
+    }
     when MSG_HELP_DAD then {
       ...model
       dadState: Dad.HAPPY
@@ -176,21 +203,27 @@ update = (model, msg) ->
       ...model
       deliveryState: Delivery.OPENED
       inventory: R.prepend Inventory.POWER_CORD, model.inventory
+      brotherState: Brother.PLAYING_WITH_TAPE_MEASURE
     }
     when MSG_PLAY_GAME_WITH_BROTHER then {
       ...model
       brotherState: Brother.PLAYING_WITH_GAME
     }
-    when MSG_PLUG_IN_PLAYSTATION then {
+    when MSG_PLUG_IN_CONTROLLER then {
       ...model
-      gameConsoleState: GameConsole.OFF
-      inventory: R.without Inventory.PowerCord, model.inventory
+      gameConsoleState: GameConsole.READY
+      inventory: R.without Inventory.CONTROLLER, model.inventory
     }
-    when MSG_TAKE_CONTROLLER_FROM_BROTHER then {
+    when MSG_PLUG_IN_GAME_CONSOLE then {
+      ...model
+      gameConsoleState: GameConsole.ON
+      inventory: R.without Inventory.POWER_CORD, model.inventory
+    }
+    when MSG_TAKE_TAPE_MEASURE_FROM_BROTHER then {
       ...model
       time: model.time - BROTHER_PENALTY_TIME
       penaltyTime: model.penaltyTime + BROTHER_PENALTY_TIME
-      brotherState: Brother.TAKING_CONTROLLER
+      brotherState: Brother.TAKING_TAPE_MEASURE
     }
     when MSG_TICK then tick model
 
@@ -227,6 +260,13 @@ goKitchenLink =
 goLivingRoomLink = 
   html"""<a @click=#{() -> dispatch MSG_GO_LIVING_ROOM}>Go to the living room</a>"""
 
+plugInGameConsoleLink =
+  html"""<a @click=#{() -> dispatch MSG_PLUG_IN_GAME_CONSOLE}>Plug in the XSwitchStation</a>"""
+plugInControllerLink =
+  html"""<a @click=#{() -> dispatch MSG_PLUG_IN_CONTROLLER}>Connect the controller to the XSwitchStation</a>"""
+goOnlineLink =
+  html"""<a @click=#{() -> dispatch MSG_GO_ONLINE}>Go online with your friends!</a>"""
+
 letSydneyOutLink = 
   html"""<a @click=#{() -> dispatch MSG_LET_SYDNEY_OUT}>Let Sydney out</a>"""
 cleanUpPoopLink = 
@@ -250,7 +290,12 @@ giveBrotherPhoneLink =
 playGameWithBrotherLink =
   html"""<a @click=#{() -> dispatch MSG_PLAY_GAME_WITH_BROTHER}>Distract him with a board game</a>"""
 takeControllerFromBrotherLink =
-  html"""<a @click=#{() -> dispatch MSG_TAKE_CONTROLLER_FROM_BROTHER}>Get your controller</a>"""
+  html"""<a @click=#{() -> dispatch MSG_TAKE_TAPE_MEASURE_FROM_BROTHER}>Grab the tape measure and run</a>"""
+
+complimentMomLink =
+  html"""<a @click=#{() -> dispatch MSG_COMPLIMENT_MOM}>Compliment #{MOM}'s idea</a>"""
+giveMomTapeMeasureLink =
+  html"""<a @click=#{() -> dispatch MSG_GIVE_MOM_TAPE_MEASURE}>Give #{MOM} the tape measure</a>"""
 
 resetGameLink = 
   html"""<a @click=#{() -> dispatch MSG_INIT}>Start over</a>"""
@@ -276,22 +321,43 @@ viewIntro = (model) ->
       """
 
 
+viewVictory = (model) ->
+  html"""
+      <p class="hooray">Congratulations, you won the game!</p>
+      <p>You had #{formatTime model.time} to spare. Well done!</p>
+      <p>Thanks for playing. :)</p>
+      """
+
+
 viewBedroom = (model) ->
+  canPlugIn = 
+    model.gameConsoleState is GameConsole.OFF and R.includes Inventory.POWER_CORD, model.inventory
+  canAttachController =
+    model.gameConsoleState is GameConsole.ON and R.includes Inventory.CONTROLLER, model.inventory
+  canGoOnline =
+    model.gameConsoleState is GameConsole.READY
+  actions = [
+    ...(if canPlugIn then [ plugInGameConsoleLink ] else [])
+    ...(if canAttachController then [ plugInControllerLink ] else [])
+    ...(if canGoOnline then [ goOnlineLink ] else [])
+    goFoyerLink
+    goLivingRoomLink
+  ]
   html"""
       <p>You are in your bedroom.</p>
       #{viewGameConsole model}
       #{viewInventory model.inventory}
-      #{viewActions [ goFoyerLink, goLivingRoomLink ]}
+      #{viewActions actions}
       """
 
 
 viewBrothersRoom = (model) ->
   actions = switch model.brotherState
-    when Brother.PLAYING_WITH_CONTROLLER
+    when Brother.PLAYING_WITH_TAPE_MEASURE
       [ takeControllerFromBrotherLink, playGameWithBrotherLink, giveBrotherPhoneLink ]
     when Brother.PLAYING_WITH_GAME
       [ takeControllerFromBrotherLink, giveBrotherPhoneLink ]
-    when Brother.TAKING_CONTROLLER
+    when Brother.TAKING_TAPE_MEASURE
       [ playGameWithBrotherLink, giveBrotherPhoneLink ]
     else
       []
@@ -334,11 +400,14 @@ viewGarage = (model) ->
 viewKitchen = (model) ->
   actions = [
     ...(if model.energyDrinkState == EnergyDrink.FULL then [ openFridgeLink ] else [])
+    ...(if R.includes Inventory.TAPE_MEASURE, model.inventory then [ giveMomTapeMeasureLink ] else [])
+    ...(if model.momState is Mom.MEASURING then [ complimentMomLink ] else [])
     goLivingRoomLink
   ]
   html"""
       <p>You are in the kitchen</p>
       #{viewEnergyDrink model}
+      #{viewMom model}
       #{viewInventory model.inventory}
       #{viewActions actions}
       """
@@ -440,14 +509,28 @@ viewBrother = (model) ->
   switch model.brotherState
     when Brother.PLAYING_WITH_LEGOS
       html"""<p>Your youngest brother is playing with Legos.</p>"""
-    when Brother.PLAYING_WITH_CONTROLLER
-      html"""<p>Your youngest brother is playing with your XSwitchStation controller!</p>"""
+    when Brother.PLAYING_WITH_TAPE_MEASURE
+      html"""<p>Your youngest brother is playing with a retractable tape measure.</p>"""
     when Brother.PLAYING_WITH_GAME
-      html"""<p>You're playing Candyland and your youngest brother is still playing with your XSwitchStation controller.</p>"""
-    when Brother.TAKING_CONTROLLER
-      html"""<p class="yikes">Well that was a disaster. He thew a FIT and it took a while to calm him down. And he's still playing with your XSwitchStation controller.</p>"""
+      html"""<p>You're playing Candyland and your youngest brother is still playing with the tape measure.</p>"""
+    when Brother.TAKING_TAPE_MEASURE
+      html"""<p class="yikes">Well that was a disaster. He thew a FIT and it took a while to calm him down. And he's still playing with the tape measure.</p>"""
     when Brother.PLAYING_WITH_PHONE
-      html"""<p class="hooray">Your youngest brother dropped the controller and is now sending SnapToks with your phone. So cute.</p>"""
+      html"""<p class="hooray">Your youngest brother dropped the tape measure and is now sending SnapToks with your phone. So cute.</p>"""
+
+
+viewMom = (model) ->
+  switch model.momState
+    when Mom.ASKING_FOR_TAPE_MEASURE
+      html"""<p>#{MOM} is working on something on the kitchen table. "Have you seen my tape
+        measure?" she asks.</p>"""
+    when Mom.MEASURING
+      html"""<p>#{MOM} measures a small set of shelves on the kitchen table. "I was thinking about
+        using these to store some of your youngest brother's art supplies and then move blah blah
+        blah.</p>"""
+    when Mom.COMPLIMENTED
+      html"""<p class="hooray">#{MOM} says, "Thank you for your input!" She gave you your
+        XSwitchStation controller. Apparently you left it in the bathroom. (Dude.)</p>"""
 
 
 viewActions = (links) ->
@@ -459,7 +542,7 @@ viewActions = (links) ->
 
 
 viewInventory = (inventory) ->
-  items = (inventory.map viewInventoryItem).join ", " or "nada"
+  items = ((inventory.map viewInventoryItem).join ", ") or "nada"
   html"""<p>You're carrying: #{items}.</p>"""
 
 
@@ -468,7 +551,7 @@ viewInventoryItem = (item) ->
     when Inventory.PHONE then "iPear phone"
     when Inventory.POWER_CORD then "XSwitchStation power cord"
     when Inventory.CONTROLLER then "XSwitchStation controller"
-    else """(What is this thing? -> #{item})"""
+    when Inventory.TAPE_MEASURE then "retractable tape measure"
 
 
 viewRoomFns =
@@ -480,14 +563,15 @@ viewRoomFns =
   [Room.INTRO]: viewIntro
   [Room.KITCHEN]: viewKitchen
   [Room.LIVING_ROOM]: viewLivingRoom
+  [Room.VICTORY]: viewVictory
 
 
 view = (model) ->
-  timer = 
-    if not (model.currentRoom in [ Room.INTRO, Room.BACK_YARD ]) then (viewTimer model)
+  displayTimer =
+    not (model.currentRoom in [ Room.INTRO, Room.BACK_YARD, Room.VICTORY ])
   html"""
       <h1>Adventure on Lochwood Drive</h1>
-      #{timer}
+      #{if displayTimer then viewTimer model}
       #{viewRoomFns[model.currentRoom] model}
       """
 
